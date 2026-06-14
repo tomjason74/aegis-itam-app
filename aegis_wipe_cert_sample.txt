@@ -1,0 +1,41 @@
+=====================================================================
+            AEGIS HEALTH PARTNERS - DATA SANITIZATION CERTIFICATE
+=====================================================================
+DOCUMENT REF ID: CERT-WIPE-998231-A
+COMPLIANCE STANDARD: NIST SP 800-88 Rev. 1 (Media Sanitization Guidelines)
+METHOD: Cryptographic Erase (Secure Crypto-Shredding)
+OPERATOR: Helpdesk Tech (Aegis IT Operations)
+DATETIME: 2026-06-08 07:45:00 UTC+8
+
+---------------------------------------------------------------------
+1. TARGET HARDWARE DETAILS:
+---------------------------------------------------------------------
+ASSET TAG: KIT-303 / LPT-882
+DEVICE MODEL: Telehealth Diagnostic Kit v2 / Lenovo ThinkPad T14
+SERIAL NUMBER: THK-9923882 / PF2XW882
+STORAGE CONTROLLER: NVMe Solid State Drive (256 GB)
+
+---------------------------------------------------------------------
+2. SANITIZATION LOG DETAILS:
+---------------------------------------------------------------------
+Command Issued: nvme format /dev/nvme0n1 --ses=2 (Cryptographic Erase)
+Verification Pass: 100% completed
+Crypto-Keys Overwritten: Successful
+Read Validation Check: Zero blocks returned plain text (Pass)
+
+---------------------------------------------------------------------
+3. CRYPTOGRAPHIC INTEGRITY VERIFICATION HASH:
+---------------------------------------------------------------------
+MD5 Hash: a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6
+SHA-256 Checksum: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+
+---------------------------------------------------------------------
+4. COMPLIANCE APPROVAL STATE:
+---------------------------------------------------------------------
+STATUS: VERIFIED & CLEANED
+PATIENT DATA ENCRYPTED PHI: Wiped & Rendered Unrecoverable
+RESULT: SAFE FOR REDEPLOYMENT
+
+APPROVED BY: Compliance Operations Auditor Office
+SIGNATURE HASH: [AEGIS-SECURE-SIGN-HASH-588321008]
+=====================================================================
