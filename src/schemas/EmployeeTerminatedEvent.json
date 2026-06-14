@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "EmployeeTerminatedEvent",
+  "type": "object",
+  "properties": {
+    "employeeId": {
+      "type": "string",
+      "pattern": "^EMP-[0-9]+$",
+      "description": "Unique identifier of the employee, e.g. EMP-101"
+    },
+    "terminationDate": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      "description": "Date of termination in YYYY-MM-DD format"
+    }
+  },
+  "required": ["employeeId"],
+  "additionalProperties": true
+}

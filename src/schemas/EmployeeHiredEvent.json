@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "EmployeeHiredEvent",
+  "type": "object",
+  "properties": {
+    "employeeId": {
+      "type": "string",
+      "pattern": "^EMP-[0-9]+$",
+      "description": "Unique identifier of the hired employee, e.g. EMP-202"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 3,
+      "description": "Full name of the employee"
+    },
+    "role": {
+      "type": "string",
+      "minLength": 3,
+      "description": "Clinical or operational title of the employee"
+    },
+    "department": {
+      "type": "string",
+      "enum": ["Telehealth", "Clinical Operations"],
+      "description": "Department assignment"
+    }
+  },
+  "required": ["employeeId", "name", "role", "department"],
+  "additionalProperties": true
+}
