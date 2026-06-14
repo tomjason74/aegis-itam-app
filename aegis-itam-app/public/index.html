@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aegis Health Partners | ITAM Intelligence Platform</title>
+    <meta name="description" content="Aegis Health Partners Integrated IT Asset Management — Enterprise-grade cloud-native automated provisioning, predictive lifecycle intelligence, and HIPAA compliance gateway.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Animated Background -->
+    <div class="glass-bg-blobs">
+        <div class="blob blob1"></div>
+        <div class="blob blob2"></div>
+        <div class="blob blob3"></div>
+    </div>
+
+    <!-- =============================================
+         LOGIN SCREEN
+    ============================================= -->
+    <div class="login-screen" id="login-screen">
+        <div class="login-card glass-card animate-slide-up">
+            <div class="login-logo">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div class="login-brand">
+                <h1>AEGIS HEALTH</h1>
+                <span>ITAM INTELLIGENCE PLATFORM</span>
+            </div>
+            <p class="login-subtitle">Enterprise IT Asset Management &amp; HIPAA Compliance Gateway</p>
+
+            <form id="login-form" class="login-form">
+                <div class="login-field">
+                    <i class="fa-solid fa-user login-field-icon"></i>
+                    <input type="text" id="login-username" placeholder="Username" autocomplete="username" required>
+                </div>
+                <div class="login-field">
+                    <i class="fa-solid fa-lock login-field-icon"></i>
+                    <input type="password" id="login-password" placeholder="Password" autocomplete="current-password" required>
+                    <button type="button" id="toggle-password" class="toggle-password-btn">
+                        <i class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+                <div id="login-error" class="login-error" style="display:none;"></div>
+                <button type="submit" id="login-btn" class="btn btn-login">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    <span>Sign In</span>
+                </button>
+            </form>
+
+            <div class="login-credentials-hint">
+                <p>Demo credentials:</p>
+                <div class="cred-grid">
+                    <span><code>admin</code> / <code>aegis2026</code> — HR Admin</span>
+                    <span><code>helpdesk</code> / <code>itdesk123</code> — IT Helpdesk</span>
+                    <span><code>auditor</code> / <code>audit@hp</code> — Compliance Auditor</span>
+                    <span><code>guest</code> / <code>readonly</code> — Read-Only Guest</span>
+                </div>
+            </div>
+
+            <div class="login-footer">
+                <i class="fa-solid fa-lock-keyhole"></i> Secured with HMAC-SHA256 &bull; HIPAA Compliant Gateway &bull; v2.0
+            </div>
+        </div>
+    </div>
+
+    <!-- =============================================
+         MAIN APP SHELL (shown after login)
+    ============================================= -->
+    <div class="app-shell" id="app-shell" style="display:none;">
+
+        <!-- LEFT SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-brand">
+                <i class="fa-solid fa-shield-halved sidebar-logo"></i>
+                <div class="sidebar-brand-text">
+                    <span class="sidebar-brand-name">AEGIS HEALTH</span>
+                    <span class="sidebar-brand-sub">ITAM Platform</span>
+                </div>
+            </div>
+
+            <div class="sidebar-section-label">MAIN</div>
+            <nav class="sidebar-nav">
+                <a class="sidebar-link active" data-page="dashboard" id="nav-dashboard" href="#">
+                    <i class="fa-solid fa-gauge-high"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a class="sidebar-link" data-page="assets" id="nav-assets" href="#">
+                    <i class="fa-solid fa-boxes-stacked"></i>
+                    <span>Asset Registry</span>
+                    <span class="sidebar-badge" id="badge-needs-wipe" style="display:none;"></span>
+                </a>
+                <a class="sidebar-link" data-page="employees" id="nav-employees" href="#">
+                    <i class="fa-solid fa-users"></i>
+                    <span>Employees</span>
+                </a>
+                <a class="sidebar-link" data-page="workflows" id="nav-workflows" href="#">
+                    <i class="fa-solid fa-rotate"></i>
+                    <span>Workflows</span>
+                    <span class="sidebar-badge" id="badge-workflows" style="display:none;"></span>
+                </a>
+            </nav>
+
+            <div class="sidebar-section-label">OPERATIONS</div>
+            <nav class="sidebar-nav">
+                <a class="sidebar-link" data-page="procurement" id="nav-procurement" href="#">
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                    <span>Procurement</span>
+                </a>
+                <a class="sidebar-link" data-page="compliance" id="nav-compliance" href="#">
+                    <i class="fa-solid fa-shield-check"></i>
+                    <span>Compliance</span>
+                </a>
+                <a class="sidebar-link" data-page="integration-lab" id="nav-integration-lab" href="#">
+                    <i class="fa-solid fa-flask"></i>
+                    <span>Integration Lab</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-section-label">SYSTEM</div>
+            <nav class="sidebar-nav">
+                <a class="sidebar-link" data-page="settings" id="nav-settings" href="#">
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="sidebar-user-avatar" id="sidebar-user-avatar">TU</div>
+                <div class="sidebar-user-info">
+                    <span class="sidebar-user-name" id="sidebar-user-name">Tom Jason Umali</span>
+                    <span class="sidebar-user-role" id="sidebar-user-role">HR Admin</span>
+                </div>
+                <button class="sidebar-logout-btn" id="btn-logout" title="Sign Out">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <div class="main-content">
+            <!-- Top Bar -->
+            <div class="topbar">
+                <div class="topbar-left">
+                    <h2 class="page-title" id="page-title">Dashboard</h2>
+                    <span class="page-breadcrumb" id="page-breadcrumb">Overview &rsaquo; Real-time ITAM Status</span>
+                </div>
+                <div class="topbar-right">
+                    <div class="topbar-status-items">
+                        <div class="topbar-status-item" id="ws-status">
+                            <span class="status-indicator yellow"></span>
+                            <i class="fa-solid fa-network-wired"></i> Connecting
+                        </div>
+                        <div class="topbar-status-item">
+                            <span class="status-indicator green"></span>
+                            <i class="fa-solid fa-database"></i> Postgres
+                        </div>
+                        <div class="topbar-status-item">
+                            <span class="status-indicator green"></span>
+                            <i class="fa-solid fa-folder-open"></i> MongoDB
+                        </div>
+                        <div class="topbar-status-item">
+                            <span class="status-indicator green"></span>
+                            <i class="fa-solid fa-chart-line"></i> InfluxDB
+                        </div>
+                    </div>
+                    <div class="topbar-user">
+                        <div class="topbar-avatar" id="topbar-avatar">TU</div>
+                        <div class="topbar-user-info">
+                            <span id="topbar-user-name">Tom Jason Umali</span>
+                            <span id="topbar-user-role" class="topbar-role-badge">HR Admin</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page Content Rendered Here -->
+            <div class="page-content" id="page-content">
+                <!-- Injected by Router -->
+            </div>
+        </div>
+    </div>
+
+    <!-- =============================================
+         TOAST NOTIFICATION CONTAINER
+    ============================================= -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- =============================================
+         HIPAA WIPE CERTIFICATE MODAL
+    ============================================= -->
+    <div class="modal" id="wipe-modal">
+        <div class="modal-content glass-card animate-slide-up">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-file-shield text-danger"></i> Upload HIPAA Cryptographic Wipe Certificate</h2>
+                <button class="btn-close" id="btn-close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="asset-info-badge" id="modal-asset-info">
+                    <!-- Loaded dynamically -->
+                </div>
+                <p class="modal-desc">
+                    <strong>Warning:</strong> Under HIPAA compliance security standards, IT assets holding clinical ePHI (Electronic Protected Health Information) must have verification of secure data sanitization before being set to "Ready to Deploy" or "Disposed". Please upload the crypto-shred verification log.
+                </p>
+                <div class="upload-drag-area" id="drag-area">
+                    <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                    <p>Drag &amp; drop certificate (PDF, Log or JPG) or <span class="browse-text">Browse Files</span></p>
+                    <input type="file" id="file-input" hidden accept=".pdf,.txt,.png,.jpg,.jpeg">
+                </div>
+                <div class="file-details" id="file-details" style="display: none;">
+                    <i class="fa-solid fa-file-pdf file-icon"></i>
+                    <div class="file-info">
+                        <span id="file-name" class="file-name">certificate.pdf</span>
+                        <span id="file-size" class="file-size">182 KB</span>
+                    </div>
+                    <button class="btn btn-outline-danger btn-xs" id="btn-remove-file"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="btn-cancel-upload">Cancel</button>
+                <button class="btn btn-danger" id="btn-submit-wipe" disabled>
+                    <i class="fa-solid fa-check-double"></i> Submit Sanitization Verification
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- =============================================
+         NEW EMPLOYEE MODAL
+    ============================================= -->
+    <div class="modal" id="new-employee-modal">
+        <div class="modal-content glass-card animate-slide-up">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-user-plus" style="color:var(--success)"></i> Onboard New Employee</h2>
+                <button class="btn-close" id="btn-close-emp-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-desc">This will trigger a BambooHR EmployeeHiredEvent webhook, auto-provision hardware from stock, and enroll devices in Jamf MDM.</p>
+                <form id="onboard-form-modal" class="form-grid" style="gap:14px;">
+                    <div style="grid-column:span 2;">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" id="modal-onboard-name" placeholder="e.g. Dr. Juan Cruz" required class="form-input">
+                    </div>
+                    <div>
+                        <label class="form-label">Role / Title</label>
+                        <input type="text" id="modal-onboard-role" placeholder="e.g. Clinical Telehealth Specialist" required class="form-input">
+                    </div>
+                    <div>
+                        <label class="form-label">Department</label>
+                        <select id="modal-onboard-dept" class="form-select">
+                            <option value="Telehealth">Telehealth</option>
+                            <option value="Clinical Operations">Clinical Operations</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="btn-cancel-emp-modal">Cancel</button>
+                <button class="btn btn-success" id="btn-submit-onboard">
+                    <i class="fa-solid fa-user-check"></i> Trigger Onboarding Webhook
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Frontend SPA Controller -->
+    <script src="app.js"></script>
+</body>
+</html>
