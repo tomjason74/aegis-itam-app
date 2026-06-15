@@ -249,11 +249,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div>
                     <h2 style="font-family:var(--font-heading);font-size:22px;margin-bottom:8px;">Access Restricted</h2>
                     <p style="color:var(--text-secondary);font-size:14px;max-width:380px;">
-                        Your current role (<strong style="color:var(--accent-teal);">${currentUser?.roleLabel || 'Unknown'}</strong>) does not have permission to view this page.
+                        Your current role (<strong style="color:var(--accent-primary);">${currentUser?.roleLabel || 'Unknown'}</strong>) does not have permission to view this page.
                     </p>
                 </div>
                 <div style="background:rgba(0,0,0,0.2);border:1px solid var(--border-card);border-radius:12px;padding:16px 24px;font-size:13px;color:var(--text-muted);">
-                    <i class="fa-solid fa-circle-info" style="color:var(--accent-teal);margin-right:6px;"></i>
+                    <i class="fa-solid fa-circle-info" style="color:var(--accent-primary);margin-right:6px;"></i>
                     Contact your HR Admin or IT Administrator to request elevated access.
                 </div>
                 <button class="btn btn-outline-teal" onclick="navigateTo('dashboard')">
@@ -798,7 +798,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 labels: Array.from({ length: 10 }, (_, i) => i),
                 datasets: [{
                     data: Array.from({ length: 10 }, () => 50 + Math.floor(Math.random() * 30)),
-                    borderColor: 'hsl(175, 85%, 45%)', borderWidth: 2,
+                    borderColor: 'hsl(252, 85%, 64%)', borderWidth: 2,
                     fill: false, tension: 0.3, pointRadius: 0
                 }]
             },
@@ -1075,7 +1075,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (summaryBar) summaryBar.innerHTML = `
                 <div class="po-summary-item">Total PO Value: <strong>$${totalVal.toLocaleString()}</strong></div>
                 <div class="po-summary-item">Total Orders: <strong>${procurementData.length}</strong></div>
-                <div class="po-summary-item">AI-Triggered: <strong style="color:var(--accent-teal)">${aiCount}</strong></div>
+                <div class="po-summary-item">AI-Triggered: <strong style="color:var(--accent-primary)">${aiCount}</strong></div>
                 <div class="po-summary-item">Manual: <strong>${procurementData.length - aiCount}</strong></div>`;
         };
         document.querySelectorAll('#po-filter-chips .filter-chip').forEach(chip => {
@@ -1484,21 +1484,21 @@ document.addEventListener('DOMContentLoaded', () => {
         tempGrad.addColorStop(0, 'rgba(235,94,85,0.4)');
         tempGrad.addColorStop(1, 'rgba(235,94,85,0)');
         const battGrad = ctx.createLinearGradient(0, 0, 0, 200);
-        battGrad.addColorStop(0, 'rgba(0,172,193,0.4)');
-        battGrad.addColorStop(1, 'rgba(0,172,193,0)');
+        battGrad.addColorStop(0, 'rgba(124,88,237,0.4)');
+        battGrad.addColorStop(1, 'rgba(124,88,237,0)');
         telemetryChart = new Chart(ctx, {
             type: 'line',
             data: { labels: [], datasets: [
                 { label: 'CPU Temp (°C)', data: [], borderColor: 'hsl(352,85%,55%)', backgroundColor: tempGrad, fill: true, tension: 0.3, borderWidth: 2, pointRadius: 1, yAxisID: 'y' },
-                { label: 'Battery Health (%)', data: [], borderColor: 'hsl(175,85%,45%)', backgroundColor: battGrad, fill: true, tension: 0.3, borderWidth: 2, pointRadius: 1, yAxisID: 'y1' }
+                { label: 'Battery Health (%)', data: [], borderColor: 'hsl(252,85%,64%)', backgroundColor: battGrad, fill: true, tension: 0.3, borderWidth: 2, pointRadius: 1, yAxisID: 'y1' }
             ]},
             options: {
                 responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { labels: { color: 'hsl(215,15%,72%)', font: { family: 'Outfit' } } } },
+                plugins: { legend: { labels: { color: 'hsl(220,15%,72%)', font: { family: 'Inter' } } } },
                 scales: {
-                    x: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: 'hsl(215,10%,45%)', maxRotation: 0, autoSkip: true, maxTicksLimit: 6 } },
-                    y: { position: 'left', min: 30, max: 100, grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: 'hsl(215,15%,72%)' } },
-                    y1: { position: 'right', min: 20, max: 100, grid: { drawOnChartArea: false }, ticks: { color: 'hsl(215,15%,72%)' } }
+                    x: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: 'hsl(220,10%,45%)', maxRotation: 0, autoSkip: true, maxTicksLimit: 6 } },
+                    y: { position: 'left', min: 30, max: 100, grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: 'hsl(220,15%,72%)' } },
+                    y1: { position: 'right', min: 20, max: 100, grid: { drawOnChartArea: false }, ticks: { color: 'hsl(220,15%,72%)' } }
                 }
             }
         });
@@ -1586,7 +1586,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-close-modal')?.addEventListener('click', closeWipeModal);
     document.getElementById('btn-cancel-upload')?.addEventListener('click', closeWipeModal);
     document.getElementById('drag-area')?.addEventListener('click', () => document.getElementById('file-input').click());
-    document.getElementById('drag-area')?.addEventListener('dragover', e => { e.preventDefault(); document.getElementById('drag-area').style.borderColor = 'var(--accent-teal)'; });
+    document.getElementById('drag-area')?.addEventListener('dragover', e => { e.preventDefault(); document.getElementById('drag-area').style.borderColor = 'var(--accent-primary)'; });
     document.getElementById('drag-area')?.addEventListener('dragleave', () => { document.getElementById('drag-area').style.borderColor = 'rgba(255,255,255,0.15)'; });
     document.getElementById('drag-area')?.addEventListener('drop', e => {
         e.preventDefault();
