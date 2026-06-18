@@ -43,7 +43,350 @@ The following matrix details the infrastructure target, compute sizing, auto-sca
 
 ---
 
-### 2. Deployment Topology Diagram
+### 2. Deployment Architecture Diagram (Containers to Infrastructure)
+
+The following C4 deployment diagram maps each of the 10 containers to their specific cloud or on-premises infrastructure resources, including instance types, scaling configurations, and geographic placement. The architecture spans **3 geographic tiers**: Global Edge, AWS Singapore Region (`ap-southeast-1`), and External SaaS Networks connected via AWS PrivateLink.
+
+```mermaid
+graph TD
+    %% ──────────────────────────────────────────────────────────
+    %% TIER 1: GLOBAL EDGE / CLIENT LAYER
+    %% ──────────────────────────────────────────────────────────
+    subgraph GlobalEdge["🌐 GLOBAL EDGE TIER"]
+        direction TB
+
+        subgraph CDN["AWS CloudFront CDN — 450+ Edge Locations"]
+            AdminWebApp["🖥️ C4: Admin Web App<br/>───────────────────<br/>Tech: React.js SPA<br/>Host: S3 + CloudFront<br/>Instance: Serverless<br/>Scaling: Global Edge Cache<br/>Geo: Multi-Region PoPs"]
+        end
+
+        subgraph MobileStores["App Stores — Global Distribution"]
+            DoctorMobileApp["📱 C4: Doctor Mobile App<br/>───────────────────<br/>Tech: React Native<br/>Host: Google Play / App Store<br/>Instance: Client Device<br/>Scaling: N/A<br/>Geo: End-User Devices"]
+        end
+    end
+
+    %% ──────────────────────────────────────────────────────────
+    %% TIER 2: AWS SINGAPORE REGION (ap-southeast-1)
+    %% ──────────────────────────────────────────────────────────
+    subgraph AWSRegion["☁️ AWS SINGAPORE REGION — ap-southeast-1"]
+        direction TB
+
+        subgraph SecurityEdge["Security Edge — WAF + Shield"]
+            WAF["🛡️ AWS WAF + Shield Standard<br/>DDoS Protection Layer"]
+            ALB["⚖️ Application Load Balancer<br/>Cross-AZ Health Checks"]
+        end
+
+        %% ── AZ-1 ──
+        subgraph AZ1["Availability Zone 1 — ap-southeast-1a"]
+            subgraph EKS_AZ1["EKS Node Group — AZ1"]
+                Kong_1["🔀 C4: API Gateway<br/>───────────────────<br/>Tech: Kong 3.4 on K8s<br/>Instance: t3.large (2vCPU/8GB)<br/>Scaling: HPA 3→10 replicas<br/>Port: 8443 (mTLS)<br/>CPU Req: 500m / Limit: 1500m"]
+                API_1["⚙️ C4: API Application<br/>───────────────────<br/>Tech: Python/FastAPI<br/>Instance: t3.large (2vCPU/8GB)<br/>Scaling: HPA 3→10 pods<br/>Trigger: CPU>70% or Mem>80%<br/>CPU Req: 500m / Limit: 2000m"]
+                Comp_1["🔒 C4: Compliance Service<br/>───────────────────<br/>Tech: Python 3.11<br/>Instance: t3.medium (2vCPU/4GB)<br/>Scaling: HPA 2→5 pods<br/>Trigger: Queue>100 tasks<br/>CPU Req: 250m / Limit: 1000m"]
+            end
+            RDS_Primary["🗄️ C4: Core Database — PRIMARY<br/>───────────────────<br/>Tech: PostgreSQL 15.4<br/>Instance: db.t3.large (2vCPU/8GB)<br/>Storage: gp3 100GB→500GB Auto<br/>IOPS: 3000 baseline<br/>Encryption: AES-256 (KMS)"]
+            MSK_1["📨 C4: Message Broker — Broker 1<br/>───────────────────<br/>Tech: Apache Kafka 3.x<br/>Instance: kafka.t3.small<br/>Storage: 100GB EBS per broker<br/>Replication Factor: 3<br/>Retention: 7 days"]
+        end
+
+        %% ── AZ-2 ──
+        subgraph AZ2["Availability Zone 2 — ap-southeast-1b"]
+            subgraph EKS_AZ2["EKS Node Group — AZ2"]
+                Kong_2["🔀 C4: API Gateway — Replica<br/>───────────────────<br/>Same config as AZ1<br/>Anti-affinity: spread across AZs"]
+                API_2["⚙️ C4: API Application — Replica<br/>───────────────────<br/>Same config as AZ1<br/>Anti-affinity: spread across AZs"]
+                Comp_2["🔒 C4: Compliance Service — Replica<br/>───────────────────<br/>Same config as AZ1<br/>Anti-affinity: spread across AZs"]
+            end
+            RDS_Standby["🗄️ C4: Core Database — STANDBY<br/>───────────────────<br/>Synchronous Replication<br/>Auto-failover: < 120 seconds<br/>Read Replica: Available"]
+            MSK_2["📨 C4: Message Broker — Broker 2<br/>───────────────────<br/>Same config as Broker 1<br/>ISR: min.insync.replicas=2"]
+        end
+
+        %% ── AZ-3 ──
+        subgraph AZ3["Availability Zone 3 — ap-southeast-1c"]
+            subgraph EKS_AZ3["EKS Node Group — AZ3"]
+                Kong_3["🔀 C4: API Gateway — Replica<br/>───────────────────<br/>Same config as AZ1<br/>Ensures quorum across 3 AZs"]
+                API_3["⚙️ C4: API Application — Replica<br/>───────────────────<br/>Same config as AZ1<br/>Ensures quorum across 3 AZs"]
+            end
+            MSK_3["📨 C4: Message Broker — Broker 3<br/>───────────────────<br/>Same config as Broker 1<br/>acks=all for durability"]
+        end
+
+        %% ── PrivateLink Subnet ──
+        subgraph PrivateLink["AWS PrivateLink Endpoints — 10.0.4.0/24"]
+            PL_Mongo["🔗 VPC Endpoint: MongoDB Atlas"]
+            PL_Elastic["🔗 VPC Endpoint: Elastic Cloud"]
+            PL_Temporal["🔗 VPC Endpoint: Temporal Cloud"]
+        end
+    end
+
+    %% ──────────────────────────────────────────────────────────
+    %% TIER 3: EXTERNAL SaaS NETWORKS
+    %% ──────────────────────────────────────────────────────────
+    subgraph SaaSNetworks["🔌 EXTERNAL SaaS NETWORKS — via PrivateLink"]
+        direction TB
+
+        MongoAtlas["🍃 C4: Document Store<br/>───────────────────<br/>Tech: MongoDB 6.0<br/>Provider: MongoDB Atlas (SaaS)<br/>Instance: M30 (2vCPU/8GB)<br/>Cluster: 3-Node Replica Set<br/>Scaling: Auto-shard at 80% storage<br/>Geo: AWS ap-southeast-1<br/>Encryption: TLS 1.3 + At-Rest"]
+
+        ElasticCloud["🔍 C4: Search Engine<br/>───────────────────<br/>Tech: Elasticsearch 8.x<br/>Provider: Elastic Cloud (SaaS)<br/>Instance: aws.data.highio<br/>Architecture: Hot-Warm (3+2 nodes)<br/>Scaling: Hot tier auto-scales<br/>Geo: AWS ap-southeast-1<br/>Retention: Hot 7d / Warm 90d"]
+
+        TemporalCloud["⏱️ C4: Workflow Engine<br/>───────────────────<br/>Tech: Temporal Server<br/>Provider: Temporal Cloud (SaaS)<br/>Tier: Standard<br/>Scaling: Fully Managed Serverless<br/>Geo: Multi-Region Active<br/>SLA: 99.99% Uptime"]
+    end
+
+    %% ──────────────────────────────────────────────────────────
+    %% EXTERNAL INTEGRATIONS
+    %% ──────────────────────────────────────────────────────────
+    subgraph ExternalAPIs["🏢 EXTERNAL INTEGRATIONS"]
+        BambooHR["BambooHR HRIS"]
+        Coupa["Coupa Procurement"]
+        FedEx["FedEx Logistics"]
+        MDM["JAMF / Intune MDM"]
+    end
+
+    %% ──────────────────────────────────────────────────────────
+    %% DATA FLOW CONNECTIONS
+    %% ──────────────────────────────────────────────────────────
+
+    %% Client to Edge
+    AdminWebApp -->|"HTTPS/443"| WAF
+    DoctorMobileApp -->|"HTTPS/443"| WAF
+    WAF --> ALB
+
+    %% ALB to EKS (Cross-AZ)
+    ALB -->|"Round-Robin"| Kong_1
+    ALB -->|"Round-Robin"| Kong_2
+    ALB -->|"Round-Robin"| Kong_3
+
+    %% Kong to Services
+    Kong_1 --> API_1
+    Kong_1 --> Comp_1
+    Kong_2 --> API_2
+    Kong_2 --> Comp_2
+    Kong_3 --> API_3
+
+    %% API to Data Layer
+    API_1 -->|"TCP/5432"| RDS_Primary
+    API_2 -->|"TCP/5432"| RDS_Primary
+    API_3 -->|"TCP/5432"| RDS_Primary
+    RDS_Primary -->|"Sync Replication"| RDS_Standby
+
+    API_1 -->|"TCP/9092"| MSK_1
+    API_2 -->|"TCP/9092"| MSK_2
+    Comp_1 -->|"TCP/9092"| MSK_1
+    Comp_2 -->|"TCP/9092"| MSK_2
+    MSK_1 ---|"ISR"| MSK_2
+    MSK_2 ---|"ISR"| MSK_3
+
+    %% API to SaaS via PrivateLink
+    API_1 --> PL_Mongo
+    API_2 --> PL_Elastic
+    API_1 --> PL_Temporal
+    PL_Mongo -->|"TLS/27017"| MongoAtlas
+    PL_Elastic -->|"TLS/9243"| ElasticCloud
+    PL_Temporal -->|"gRPC/7233"| TemporalCloud
+
+    %% External API Integrations (via NAT Gateway)
+    API_1 -->|"HTTPS"| BambooHR
+    API_2 -->|"HTTPS"| Coupa
+    TemporalCloud -->|"HTTPS"| FedEx
+    Comp_1 -->|"HTTPS"| MDM
+```
+
+---
+
+### 3. Per-Container Infrastructure Specifications
+
+The following sections provide granular infrastructure details for each of the 10 C4 containers, expanding on the mapping table above with resource limits, health checks, and geographic justification.
+
+---
+
+#### 3.1 Admin Web App → AWS S3 + CloudFront
+
+| Attribute | Specification |
+| :--- | :--- |
+| **C4 Container** | Admin Web App (React.js SPA) |
+| **Infrastructure** | AWS S3 (Origin) + CloudFront (CDN) |
+| **Instance Type** | Serverless — no compute instances required |
+| **S3 Bucket Config** | Static website hosting enabled, versioning on, MFA delete protected |
+| **CloudFront Distribution** | Price Class 200 (Asia, US, EU), TLS 1.2+ only, OAI restricted access |
+| **Scaling** | Automatic — CloudFront scales to millions of requests globally |
+| **Cache Policy** | Static assets: 30-day TTL; API calls: no-cache pass-through to ALB |
+| **Geographic Placement** | Origin in `ap-southeast-1`; Edge cached at 450+ global PoPs |
+| **Custom Domain** | `itam.aegishealth.ph` → CloudFront CNAME with ACM SSL certificate |
+| **Health Check** | CloudFront origin health check: HTTP 200 from S3 index.html |
+
+---
+
+#### 3.2 Doctor Mobile App → App Store Distribution
+
+| Attribute | Specification |
+| :--- | :--- |
+| **C4 Container** | Doctor Mobile App (React Native) |
+| **Infrastructure** | Google Play Store / Apple App Store |
+| **Instance Type** | Client-side — runs on end-user iOS/Android devices |
+| **Minimum Device OS** | iOS 15+ / Android 12+ |
+| **API Endpoint** | Connects to `api.aegishealth.ph` (ALB → Kong) via HTTPS |
+| **Scaling** | N/A — distributed on user devices |
+| **Geographic Placement** | Global client devices (primarily Philippines, Singapore) |
+| **Update Strategy** | OTA updates via CodePush for JS bundles; native builds via CI/CD |
+| **Offline Support** | AsyncStorage local cache for asset acknowledgment workflows |
+| **Health Check** | App-level heartbeat ping to `/api/v1/health` every 60 seconds |
+
+---
+
+#### 3.3 API Gateway → Kong on AWS EKS
+
+| Attribute | Specification |
+| :--- | :--- |
+| **C4 Container** | API Gateway (Kong 3.4) |
+| **Infrastructure** | AWS EKS (Kubernetes 1.28) — Managed Node Group |
+| **Instance Type** | `t3.large` (2 vCPU, 8 GiB RAM) — Spot Instances for cost optimization |
+| **Pod Resources** | Request: 500m CPU / 512Mi RAM — Limit: 1500m CPU / 1.5Gi RAM |
+| **Replica Count** | Min: 3 (1 per AZ) — Max: 10 via HPA |
+| **Scaling Trigger** | HPA: CPU utilization > 60% or request rate > 500 req/s |
+| **Pod Disruption Budget** | `minAvailable: 2` — ensures availability during rolling updates |
+| **Anti-Affinity** | `topologyKey: topology.kubernetes.io/zone` — spreads pods across AZs |
+| **Geographic Placement** | `ap-southeast-1a`, `ap-southeast-1b`, `ap-southeast-1c` |
+| **Ports** | Ingress: 8443 (mTLS) — Admin API: 8444 (internal only) |
+| **Rate Limiting** | 1000 req/min per consumer; 5000 req/min global |
+| **Health Check** | Liveness: `/status` (TCP 8100); Readiness: `/status/ready` (HTTP 200) |
+
+---
+
+#### 3.4 API Application → AWS EKS
+
+| Attribute | Specification |
+| :--- | :--- |
+| **C4 Container** | API Application (Python / FastAPI) |
+| **Infrastructure** | AWS EKS (Kubernetes 1.28) — Managed Node Group |
+| **Instance Type** | `t3.large` (2 vCPU, 8 GiB RAM) — mixed On-Demand + Spot |
+| **Pod Resources** | Request: 500m CPU / 1Gi RAM — Limit: 2000m CPU / 3Gi RAM |
+| **Replica Count** | Min: 3 (1 per AZ) — Max: 10 via HPA |
+| **Scaling Trigger** | HPA: CPU > 70% or Memory > 80% |
+| **Startup Probe** | HTTP GET `/health` — Initial delay: 10s, Period: 5s, Failure: 12 |
+| **Anti-Affinity** | `topologyKey: topology.kubernetes.io/zone` — spread across 3 AZs |
+| **Geographic Placement** | `ap-southeast-1a`, `ap-southeast-1b`, `ap-southeast-1c` |
+| **Environment Secrets** | Injected via AWS Secrets Manager → K8s ExternalSecret Operator |
+| **Connection Pools** | PostgreSQL: 20 connections/pod; MongoDB: 10 connections/pod |
+| **Health Check** | Liveness: `/health`; Readiness: `/health/ready` (checks DB connectivity) |
+
+---
+
+#### 3.5 Compliance Service → AWS EKS
+
+| Attribute | Specification |
+| :--- | :--- |
+| **C4 Container** | Compliance Service (Python 3.11) |
+| **Infrastructure** | AWS EKS (Kubernetes 1.28) — Managed Node Group |
+| **Instance Type** | `t3.medium` (2 vCPU, 4 GiB RAM) — Spot Instances |
+| **Pod Resources** | Request: 250m CPU / 512Mi RAM — Limit: 1000m CPU / 2Gi RAM |
+| **Replica Count** | Min: 2 — Max: 5 via HPA |
+| **Scaling Trigger** | HPA: Kafka consumer lag > 100 messages or CPU > 75% |
+| **Anti-Affinity** | `topologyKey: topology.kubernetes.io/zone` — spread across AZs |
+| **Geographic Placement** | `ap-southeast-1a`, `ap-southeast-1b` (2 AZs minimum) |
+| **Kafka Consumer Group** | `compliance-consumer-group` — auto-commit interval: 5s |
+| **HIPAA Controls** | PHI data encrypted in transit (mTLS) and at rest (EBS encryption) |
+| **Health Check** | Liveness: `/health`; Readiness: `/health/kafka` (checks broker connectivity) |
+
+---
+
+#### 3.6 Workflow Engine → Temporal Cloud (SaaS)
+
+| Attribute | Specification |
+| :--- | :--- |
+| **C4 Container** | Workflow Engine (Temporal) |
+| **Infrastructure** | Temporal Cloud — Fully Managed SaaS |
+| **Tier** | Standard (includes 100K workflow executions/month) |
+| **Instance Type** | Serverless — no user-managed instances |
+| **Scaling** | Fully managed auto-scaling by Temporal Cloud |
+| **Geographic Placement** | Multi-region active (primary: `ap-southeast-1`, failover: `ap-southeast-2`) |
+| **Network Connectivity** | AWS PrivateLink endpoint in `10.0.4.0/24` subnet → gRPC port 7233 |
+| **Namespace** | `aegis-itam-prod.temporal.cloud` |
+| **Retention** | Workflow history: 30 days; Completed workflow archives: 90 days |
+| **SLA** | 99.99% workflow execution uptime guarantee |
+| **mTLS** | Client certificates issued via AWS ACM Private CA |
+| **Health Check** | Temporal SDK health check in worker pods; namespace reachability probe |
+
+---
+
+#### 3.7 Core Database → AWS RDS PostgreSQL
+
+| Attribute | Specification |
+| :--- | :--- |
+| **C4 Container** | Core Database (PostgreSQL 15) |
+| **Infrastructure** | AWS RDS for PostgreSQL — Multi-AZ Deployment |
+| **Instance Type** | `db.t3.large` (2 vCPU, 8 GiB RAM) |
+| **Storage** | gp3, 100 GB initial — Auto-scaling up to 500 GB |
+| **IOPS** | 3,000 baseline (gp3) — burstable to 16,000 |
+| **Scaling** | Vertical: instance class upgrade; Storage: automatic expansion |
+| **Read Replicas** | 1 read replica (expandable to 5) for reporting queries |
+| **Multi-AZ** | Primary in `ap-southeast-1a`; Standby in `ap-southeast-1b` |
+| **Failover** | Automatic failover in < 120 seconds with DNS endpoint flip |
+| **Backup** | Automated daily snapshots; 30-day retention; PITR enabled |
+| **Encryption** | AES-256 at rest via AWS KMS; TLS 1.2+ in transit |
+| **Parameter Group** | `max_connections=200`, `shared_buffers=2GB`, `work_mem=64MB` |
+| **Maintenance Window** | Sunday 04:00–05:00 SGT (low-traffic period) |
+| **Health Check** | RDS Enhanced Monitoring (60s interval); CloudWatch alarms on CPU/storage |
+
+---
+
+#### 3.8 Document Store → MongoDB Atlas (SaaS)
+
+| Attribute | Specification |
+| :--- | :--- |
+| **C4 Container** | Document Store (MongoDB 6.0) |
+| **Infrastructure** | MongoDB Atlas — Managed SaaS on AWS |
+| **Instance Tier** | M30 (2 vCPU, 8 GiB RAM per node) |
+| **Cluster Topology** | 3-node replica set (Primary + 2 Secondaries) |
+| **Storage** | NVMe SSD — Auto-scaling enabled at 80% threshold |
+| **Scaling** | Horizontal: auto-sharding when collections exceed 50 GB |
+| **Geographic Placement** | AWS `ap-southeast-1` — VPC Peered with Aegis VPC |
+| **Network** | AWS PrivateLink endpoint → port 27017 (TLS enforced) |
+| **Read Preference** | `nearest` — optimizes latency for clinical document retrieval |
+| **Write Concern** | `w: majority` — ensures document durability across replica set |
+| **Encryption** | TLS 1.3 in transit; AES-256-CBC at rest with KMIP integration |
+| **Backup** | Continuous cloud backup with point-in-time restore (35-day window) |
+| **Health Check** | Atlas monitoring dashboard; custom alerts on replica lag > 10s |
+
+---
+
+#### 3.9 Message Broker → AWS MSK (Apache Kafka)
+
+| Attribute | Specification |
+| :--- | :--- |
+| **C4 Container** | Message Broker (Apache Kafka 3.x) |
+| **Infrastructure** | AWS Managed Streaming for Apache Kafka (MSK) |
+| **Instance Type** | `kafka.t3.small` (2 vCPU, 2 GiB RAM per broker) |
+| **Cluster Size** | 3 broker nodes (1 per Availability Zone) |
+| **Storage** | 100 GB EBS (gp3) per broker — auto-scaling enabled |
+| **Scaling** | Horizontal: expandable to 12 brokers; Partition auto-scaling |
+| **Geographic Placement** | `ap-southeast-1a`, `ap-southeast-1b`, `ap-southeast-1c` |
+| **Replication Factor** | 3 (data replicated to all brokers) |
+| **Min ISR** | `min.insync.replicas = 2` |
+| **Producer Config** | `acks = all` — guarantees zero data loss |
+| **Retention** | 7-day message retention; compacted topics for state stores |
+| **Topics** | `hr.employee.events`, `itam.asset.events`, `procurement.po.events`, `logistics.shipment.events`, `security.mdm.events` |
+| **Encryption** | TLS in transit; EBS encryption at rest via AWS KMS |
+| **Health Check** | MSK cluster monitoring; CloudWatch alarms on consumer lag, disk usage |
+
+---
+
+#### 3.10 Search Engine → Elastic Cloud on AWS
+
+| Attribute | Specification |
+| :--- | :--- |
+| **C4 Container** | Search Engine (Elasticsearch 8.x) |
+| **Infrastructure** | Elastic Cloud — Managed SaaS on AWS |
+| **Instance Type** | `aws.data.highio` (Hot tier: 2 nodes) + `aws.data.highstorage` (Warm tier: 1 node) |
+| **Architecture** | Hot-Warm-Cold with ILM (Index Lifecycle Management) |
+| **Cluster Topology** | 3 data nodes (2 hot + 1 warm) + 1 dedicated master |
+| **Scaling** | Hot tier auto-scales based on indexing throughput |
+| **Geographic Placement** | AWS `ap-southeast-1` — Multi-AZ deployment (2 AZs) |
+| **Network** | AWS PrivateLink endpoint → port 9243 (TLS enforced) |
+| **Index Strategy** | Daily indices with `itam-assets-YYYY.MM.DD` naming pattern |
+| **Retention** | Hot: 7 days, Warm: 90 days, Delete after 365 days |
+| **Kibana** | Enabled — audit dashboards, asset search analytics, compliance reporting |
+| **Snapshot** | Daily snapshots to S3 with 30-day retention |
+| **Health Check** | `_cluster/health` API; alerts on yellow/red cluster status |
+
+---
+
+### 4. Deployment Network Topology
+
 The deployment architecture is fully isolated within a custom Amazon VPC integrated with secure external SaaS networks via **AWS PrivateLink**:
 
 ```mermaid
